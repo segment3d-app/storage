@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	ServerAddress     string `mapstructure:"SERVER_ADDRESS"`
+	ServerAddress     string `mapstructure:"STORAGE_SERVER_ADDRESS"`
 	ContainerName     string `mapstructure:"CONTAINER_NAME"`
 	ContainerPort     string `mapstructure:"CONTAINER_PORT"`
 	ContainerProtocol string `mapstructure:"CONTAINER_PROTOCOL"`
