@@ -1,0 +1,104 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a documentation for Segment3d App API",
+        "title": "Segment3d App API Documentation",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8081",
+    "basePath": "/",
+    "paths": {
+        "/upload": {
+            "post": {
+                "description": "Uploads a file to the specified folder within the server's storage directory.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Upload file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Folder where the file will be uploaded",
+                        "name": "folder",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Upload file success",
+                        "schema": {
+                            "$ref": "#/definitions/api.uploadFileResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{foldername}/{filename}": {
+            "get": {
+                "description": "Retrieve file data from specified folder",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Get file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Folder Name",
+                        "name": "foldername",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File Name",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File retrieved successfully",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.uploadFileResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

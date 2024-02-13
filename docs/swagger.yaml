@@ -1,0 +1,70 @@
+basePath: /
+definitions:
+  api.uploadFileResponse:
+    properties:
+      message:
+        type: string
+      url:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: This is a documentation for Segment3d App API
+  title: Segment3d App API Documentation
+  version: "1.0"
+paths:
+  /{foldername}/{filename}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve file data from specified folder
+      parameters:
+      - description: Folder Name
+        in: path
+        name: foldername
+        required: true
+        type: string
+      - description: File Name
+        in: path
+        name: filename
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: File retrieved successfully
+          schema:
+            type: file
+      summary: Get file
+      tags:
+      - file
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a file to the specified folder within the server's storage
+        directory.
+      parameters:
+      - description: Folder where the file will be uploaded
+        in: formData
+        name: folder
+        required: true
+        type: string
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload file success
+          schema:
+            $ref: '#/definitions/api.uploadFileResponse'
+      summary: Upload file
+      tags:
+      - file
+swagger: "2.0"
