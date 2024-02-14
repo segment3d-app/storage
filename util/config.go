@@ -5,10 +5,10 @@ import (
 )
 
 type Config struct {
-	ServerAddress     string `mapstructure:"STORAGE_SERVER_ADDRESS"`
-	ContainerName     string `mapstructure:"CONTAINER_NAME"`
-	ContainerPort     string `mapstructure:"CONTAINER_PORT"`
-	ContainerProtocol string `mapstructure:"CONTAINER_PROTOCOL"`
+	ServerAddress   string `mapstructure:"STORAGE_SERVER_ADDRESS"`
+	StorageAddress  string `mapstructure:"STORAGE_ADDRESS"`
+	StoragePort     string `mapstructure:"STORAGE_PORT"`
+	StorageProtocol string `mapstructure:"STORAGE_PROTOCOL"`
 }
 
 func LoadConfig(path string) (config Config, err error) {

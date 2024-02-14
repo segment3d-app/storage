@@ -48,7 +48,7 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, uploadFileResponse{Message: "upload file success", Url: fmt.Sprintf("%s://%s:%s/%s", server.config.ContainerProtocol, server.config.ContainerName, server.config.ContainerPort, filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))})
+	ctx.JSON(http.StatusOK, uploadFileResponse{Message: "upload file success", Url: fmt.Sprintf("%s://%s:%s/%s", server.config.StorageProtocol, server.config.StorageAddress, server.config.StoragePort, filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))})
 }
 
 type getFileRequest struct {
