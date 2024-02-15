@@ -16,20 +16,16 @@ info:
   title: Segment3d App API Documentation
   version: "1.0"
 paths:
-  /{foldername}/{filename}:
+  /files/{path}:
     get:
       consumes:
       - application/json
-      description: Retrieve file data from specified folder
+      description: Retrieve file data from specified path within the server's storage
+        directory.
       parameters:
-      - description: Folder Name
+      - description: Path including any folders and subfolders to the file
         in: path
-        name: foldername
-        required: true
-        type: string
-      - description: File Name
-        in: path
-        name: filename
+        name: path
         required: true
         type: string
       produces:

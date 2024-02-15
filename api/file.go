@@ -53,7 +53,7 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 			return
 		}
 
-		uploadedFilePath := fmt.Sprintf("%s://%s:%s/%s",
+		uploadedFilePath := fmt.Sprintf("%s://%s:%s/files/%s",
 			server.config.StorageProtocol,
 			server.config.StorageAddress,
 			server.config.StoragePort,
@@ -64,29 +64,18 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, uploadFileResponse{Message: fmt.Sprintf("%d files uploaded successfully", len(files)), Url: uploadedFiles})
 }
 
-type getFileRequest struct {
-	FolderName string `uri:"foldername" binding:"required"`
-	FileName   string `uri:"filename" binding:"required"`
-}
-
-// getFile handles file retrieval requests
 // @Summary Get file
-// @Description Retrieve file data from specified folder
+// @Description Retrieve file data from specified path within the server's storage directory.
 // @Tags file
 // @Accept json
 // @Produce octet-stream
-// @Param foldername path string true "Folder Name"
-// @Param filename path string true "File Name"
+// @Param path path string true "Path including any folders and subfolders to the file"
 // @Success 200 {file} file "File retrieved successfully"
-// @Router /{foldername}/{filename} [get]
+// @Router /files/{path} [get]
 func (server *Server) getFile(ctx *gin.Context) {
-	var req getFileRequest
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
+	capturedPath := ctx.Param("path")
 
-	filePath := filepath.Join(RootStorage, req.FolderName, req.FileName)
+	filePath := filepath.Join(RootStorage, filepath.Clean("/"+capturedPath)) // Prepending slash to ensure path is correctly joined
 
 	if info, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
