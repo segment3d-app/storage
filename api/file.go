@@ -12,8 +12,8 @@ import (
 var RootStorage = "./files"
 
 type uploadFileResponse struct {
-	Message string `json:"message"`
-	Url     string `json:"url"`
+	Message string   `json:"message"`
+	Url     []string `json:"url"`
 }
 
 // uploadFile uploads a file to a specified folder and returns the URL.
@@ -23,32 +23,45 @@ type uploadFileResponse struct {
 // @Accept multipart/form-data
 // @Produce json
 // @Param folder formData string true "Folder where the file will be uploaded"
-// @Param file formData file true "File to upload"
+// @Param file formData []file true "File(s) to upload"
 // @Success 200 {object} uploadFileResponse "Upload file success"
 // @Router /upload [post]
 func (server *Server) uploadFile(ctx *gin.Context) {
-	ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, 1000<<20)
+	ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, 1000<<20) // Limit the request body to 1GB
 
 	folder := ctx.PostForm("folder")
-	file, err := ctx.FormFile("file")
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+	form, _ := ctx.MultipartForm()
+	files := form.File["file"]
+
+	if len(files) == 0 {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("no file provided")))
 		return
 	}
 
-	filePath := filepath.Join(RootStorage, filepath.Clean(folder), filepath.Base(file.Filename))
+	var uploadedFiles []string
 
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
+	for _, file := range files {
+		filePath := filepath.Join(RootStorage, filepath.Clean(folder), filepath.Base(file.Filename))
+
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+
+		if err := ctx.SaveUploadedFile(file, filePath); err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+
+		uploadedFilePath := fmt.Sprintf("%s://%s:%s/%s",
+			server.config.StorageProtocol,
+			server.config.StorageAddress,
+			server.config.StoragePort,
+			filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))
+		uploadedFiles = append(uploadedFiles, uploadedFilePath)
 	}
 
-	if err := ctx.SaveUploadedFile(file, filePath); err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, uploadFileResponse{Message: "upload file success", Url: fmt.Sprintf("%s://%s:%s/%s", server.config.StorageProtocol, server.config.StorageAddress, server.config.StoragePort, filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))})
+	ctx.JSON(http.StatusOK, uploadFileResponse{Message: fmt.Sprintf("%d files uploaded successfully", len(files)), Url: uploadedFiles})
 }
 
 type getFileRequest struct {

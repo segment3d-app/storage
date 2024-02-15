@@ -5,7 +5,9 @@ definitions:
       message:
         type: string
       url:
-        type: string
+        items:
+          type: string
+        type: array
     type: object
 host: localhost:8081
 info:
@@ -52,11 +54,14 @@ paths:
         name: folder
         required: true
         type: string
-      - description: File to upload
+      - collectionFormat: csv
+        description: File(s) to upload
         in: formData
+        items:
+          type: file
         name: file
         required: true
-        type: file
+        type: array
       produces:
       - application/json
       responses:

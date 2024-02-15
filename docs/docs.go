@@ -37,8 +37,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "file",
-                        "description": "File to upload",
+                        "type": "array",
+                        "items": {
+                            "type": "file"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "File(s) to upload",
                         "name": "file",
                         "in": "formData",
                         "required": true
@@ -102,7 +106,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }
