@@ -35,7 +35,7 @@ func (server *Server) setupRouter() {
 	docs.SwaggerInfo.BasePath = "/"
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	router.GET("/", server.getFile)
+	router.GET("/:foldername/:filename", server.getFile)
 	router.POST("/upload", server.uploadFile)
 
 	server.router = router

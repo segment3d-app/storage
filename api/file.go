@@ -64,26 +64,29 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, uploadFileResponse{Message: fmt.Sprintf("%d files uploaded successfully", len(files)), Url: uploadedFiles})
 }
 
-// getFile handles file retrieval requests using query parameters
+type getFileRequest struct {
+	FolderName string `uri:"foldername" binding:"required"`
+	FileName   string `uri:"filename" binding:"required"`
+}
+
+// getFile handles file retrieval requests
 // @Summary Get file
-// @Description Retrieve file data from specified folder using query parameters
+// @Description Retrieve file data from specified folder
 // @Tags file
 // @Accept json
 // @Produce octet-stream
-// @Param foldername query string true "Folder Name"
-// @Param filename query string true "File Name"
+// @Param foldername path string true "Folder Name"
+// @Param filename path string true "File Name"
 // @Success 200 {file} file "File retrieved successfully"
-// @Router / [get]
+// @Router /{foldername}/{filename} [get]
 func (server *Server) getFile(ctx *gin.Context) {
-	folderName := ctx.Query("foldername")
-	fileName := ctx.Query("filename")
-
-	if folderName == "" || fileName == "" {
-		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("foldername and filename is required")))
+	var req getFileRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	filePath := filepath.Join(RootStorage, folderName, fileName)
+	filePath := filepath.Join(RootStorage, req.FolderName, req.FileName)
 
 	if info, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {

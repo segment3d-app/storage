@@ -16,19 +16,19 @@ info:
   title: Segment3d App API Documentation
   version: "1.0"
 paths:
-  /:
+  /{foldername}/{filename}:
     get:
       consumes:
       - application/json
-      description: Retrieve file data from specified folder using query parameters
+      description: Retrieve file data from specified folder
       parameters:
       - description: Folder Name
-        in: query
+        in: path
         name: foldername
         required: true
         type: string
       - description: File Name
-        in: query
+        in: path
         name: filename
         required: true
         type: string

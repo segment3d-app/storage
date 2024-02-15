@@ -15,45 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/": {
-            "get": {
-                "description": "Retrieve file data from specified folder using query parameters",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/octet-stream"
-                ],
-                "tags": [
-                    "file"
-                ],
-                "summary": "Get file",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Folder Name",
-                        "name": "foldername",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "File Name",
-                        "name": "filename",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "File retrieved successfully",
-                        "schema": {
-                            "type": "file"
-                        }
-                    }
-                }
-            }
-        },
         "/upload": {
             "post": {
                 "description": "Uploads a file to the specified folder within the server's storage directory.",
@@ -92,6 +53,45 @@ const docTemplate = `{
                         "description": "Upload file success",
                         "schema": {
                             "$ref": "#/definitions/api.uploadFileResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{foldername}/{filename}": {
+            "get": {
+                "description": "Retrieve file data from specified folder",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Get file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Folder Name",
+                        "name": "foldername",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File Name",
+                        "name": "filename",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File retrieved successfully",
+                        "schema": {
+                            "type": "file"
                         }
                     }
                 }
