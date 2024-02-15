@@ -36,6 +36,7 @@ func (server *Server) setupRouter() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	router.GET("/files/*path", server.getFile)
+	router.GET("/thumbnail/*path", server.getThumbnail)
 	router.POST("/upload", server.uploadFile)
 
 	server.router = router

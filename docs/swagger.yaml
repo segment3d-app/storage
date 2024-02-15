@@ -38,6 +38,27 @@ paths:
       summary: Get file
       tags:
       - file
+  /thumbnail/{path}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve thumbnail from specified resource path
+      parameters:
+      - description: Path including any folders and subfolders to the file
+        in: path
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: File retrieved successfully
+          schema:
+            type: file
+      summary: Get file
+      tags:
+      - file
   /upload:
     post:
       consumes:

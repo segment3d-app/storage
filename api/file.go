@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,6 +42,7 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 	}
 
 	var uploadedFiles []string
+	isThumbnailGenerate := false
 
 	for _, file := range files {
 		filePath := filepath.Join(RootStorage, filepath.Clean(folder), filepath.Base(file.Filename))
@@ -59,9 +63,79 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 			server.config.StoragePort,
 			filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))
 		uploadedFiles = append(uploadedFiles, uploadedFilePath)
+
+		// generate
+		if !isThumbnailGenerate {
+			if isVideo(file.Filename) {
+				generateThumbnailForVideo(filePath)
+				isThumbnailGenerate = true
+			} else if isImage(file.Filename) {
+				generateThumbnailForImage(filePath)
+				isThumbnailGenerate = true
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusOK, uploadFileResponse{Message: fmt.Sprintf("%d files uploaded successfully", len(files)), Url: uploadedFiles})
+}
+
+func generateThumbnailForImage(imagePath string) error {
+	modifiedPath := strings.Replace(imagePath, "source", "thumbnail", -1)
+	sourceFile, err := os.Open(imagePath)
+	if err != nil {
+		return fmt.Errorf("failed to open source image: %w", err)
+	}
+	defer sourceFile.Close()
+
+	if err := os.MkdirAll(strings.TrimRight(modifiedPath, filepath.Base(modifiedPath)), os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create directories for thumbnail: %w", err)
+	}
+
+	destFile, err := os.Create(modifiedPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination image: %w", err)
+	}
+	defer destFile.Close()
+
+	if _, err := io.Copy(destFile, sourceFile); err != nil {
+		return fmt.Errorf("failed to copy image data: %w", err)
+	}
+
+	return nil
+}
+
+func generateThumbnailForVideo(videoPath string) error {
+	modifiedPath := strings.Replace(videoPath, "source", "thumbnail", -1)
+	thumbnailPath := modifiedPath + ".jpg"
+	if _, err := os.Stat(filepath.Dir(thumbnailPath)); os.IsNotExist(err) {
+		os.MkdirAll(filepath.Dir(thumbnailPath), os.ModePerm)
+	}
+	cmd := exec.Command("ffmpeg", "-i", videoPath, "-ss", "00:00:01", "-frames:v", "1", thumbnailPath)
+	if err := cmd.Run(); err != nil {
+		fmt.Println(err.Error())
+		return fmt.Errorf("ffmpeg error: %w", err)
+	}
+	return nil
+}
+
+func isVideo(filename string) bool {
+	videoExtensions := []string{".mp4", ".avi", ".mov", ".wmv"} // Add more as needed
+	for _, ext := range videoExtensions {
+		if strings.HasSuffix(strings.ToLower(filename), ext) {
+			return true
+		}
+	}
+	return false
+}
+
+func isImage(filename string) bool {
+	imageExtensions := []string{".jpg", ".jpeg", ".png", ".gif", ".bmp"} // Add more as needed
+	for _, ext := range imageExtensions {
+		if strings.HasSuffix(strings.ToLower(filename), ext) {
+			return true
+		}
+	}
+	return false
 }
 
 // @Summary Get file
@@ -75,7 +149,7 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 func (server *Server) getFile(ctx *gin.Context) {
 	capturedPath := ctx.Param("path")
 
-	filePath := filepath.Join(RootStorage, filepath.Clean("/"+capturedPath)) // Prepending slash to ensure path is correctly joined
+	filePath := filepath.Join(RootStorage, filepath.Clean("/"+capturedPath))
 
 	if info, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
@@ -90,4 +164,60 @@ func (server *Server) getFile(ctx *gin.Context) {
 	}
 
 	ctx.File(filePath)
+}
+
+// @Summary Get file
+// @Description Retrieve thumbnail from specified resource path
+// @Tags file
+// @Accept json
+// @Produce octet-stream
+// @Param path path string true "Path including any folders and subfolders to the file"
+// @Success 200 {file} file "File retrieved successfully"
+// @Router /thumbnail/{path} [get]
+func (server *Server) getThumbnail(ctx *gin.Context) {
+	capturedPath := ctx.Param("path")
+
+	filePath := filepath.Join(RootStorage, filepath.Clean("/"+capturedPath))
+	info, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	var firstFile string
+	if info.IsDir() {
+		firstFile, err = getFirstFileInDir(strings.Replace(filePath, "source", "thumbnail", -1))
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	} else {
+		folderPath := filepath.Dir(filePath)
+		firstFile, err = getFirstFileInDir(strings.Replace(folderPath, "source", "thumbnail", -1))
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+	}
+	ctx.File(firstFile)
+}
+
+func getFirstFileInDir(dirPath string) (string, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+
+			return filepath.Join(dirPath, entry.Name()), nil
+		}
+	}
+
+	return "", fmt.Errorf("no files found in the directory")
 }
