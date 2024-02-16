@@ -166,13 +166,18 @@ func (server *Server) getFile(ctx *gin.Context) {
 	ctx.File(filePath)
 }
 
+type getThumbnailResponse struct {
+	Message string `json:"message"`
+	Url     string `json:"url"`
+}
+
 // @Summary Get file
 // @Description Retrieve thumbnail from specified resource path
 // @Tags file
 // @Accept json
-// @Produce octet-stream
+// @Produce json
 // @Param path path string true "Path including any folders and subfolders to the file"
-// @Success 200 {file} file "File retrieved successfully"
+// @Success 200 {file} test "File retrieved successfully"
 // @Router /thumbnail/{path} [get]
 func (server *Server) getThumbnail(ctx *gin.Context) {
 	capturedPath := ctx.Param("path")
@@ -203,7 +208,13 @@ func (server *Server) getThumbnail(ctx *gin.Context) {
 			return
 		}
 	}
-	ctx.File(firstFile)
+	url := fmt.Sprintf("%s://%s:%s/files/%s",
+		server.config.StorageProtocol,
+		server.config.StorageAddress,
+		server.config.StoragePort,
+		strings.Replace(firstFile, RootStorage, "", -1))
+
+	ctx.JSON(http.StatusAccepted, getThumbnailResponse{Url: url, Message: "thumnail image is successfully retrived"})
 }
 
 func getFirstFileInDir(dirPath string) (string, error) {
