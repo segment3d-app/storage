@@ -208,11 +208,12 @@ func (server *Server) getThumbnail(ctx *gin.Context) {
 			return
 		}
 	}
-	url := fmt.Sprintf("%s://%s:%s/files/%s",
+	url := fmt.Sprintf("%s://%s:%s/%s",
 		server.config.StorageProtocol,
 		server.config.StorageAddress,
 		server.config.StoragePort,
-		strings.Replace(firstFile, RootStorage, "", -1))
+		firstFile,
+	)
 
 	ctx.JSON(http.StatusAccepted, getThumbnailResponse{Url: url, Message: "thumnail image is successfully retrived"})
 }
