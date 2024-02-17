@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/segment3d-app/segment3d-storage/docs"
 	"github.com/segment3d-app/segment3d-storage/util"
@@ -34,6 +36,11 @@ func (server *Server) setupRouter() {
 	// configure swagger docs
 	docs.SwaggerInfo.BasePath = "/"
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
+	// health check api
+	router.GET("/api/health", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"message": "server is running"})
+	})
 
 	router.GET("/files/*path", server.getFile)
 	router.GET("/thumbnail/*path", server.getThumbnail)
