@@ -57,10 +57,7 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 			return
 		}
 
-		uploadedFilePath := fmt.Sprintf("%s://%s:%s/files/%s",
-			server.config.StorageProtocol,
-			server.config.StorageAddress,
-			server.config.StoragePort,
+		uploadedFilePath := fmt.Sprintf("/files/%s",
 			filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))
 		uploadedFiles = append(uploadedFiles, uploadedFilePath)
 
@@ -208,12 +205,7 @@ func (server *Server) getThumbnail(ctx *gin.Context) {
 			return
 		}
 	}
-	url := fmt.Sprintf("%s://%s:%s/%s",
-		server.config.StorageProtocol,
-		server.config.StorageAddress,
-		server.config.StoragePort,
-		firstFile,
-	)
+	url := fmt.Sprintf("/%s", firstFile)
 
 	ctx.JSON(http.StatusAccepted, getThumbnailResponse{Url: url, Message: "thumnail image is successfully retrived"})
 }
