@@ -18,5 +18,4 @@ jobs:
           port: 22
           script: |
             cd /home/indramhrt/segment3d-app
-            git pull origin main
-            docker-compose up -d --build
+            ./script/setup.sh
