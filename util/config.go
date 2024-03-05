@@ -6,6 +6,7 @@ import (
 
 type Config struct {
 	ServerAddress string `mapstructure:"STORAGE_SERVER_ADDRESS"`
+	StorageSwaggerHost string `mapstructure:"STORAGE_SWAGGER_HOST"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
