@@ -54,7 +54,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "produces": [
-                    "application/octet-stream"
+                    "application/json"
                 ],
                 "tags": [
                     "file"
