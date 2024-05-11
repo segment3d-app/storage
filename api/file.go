@@ -77,7 +77,7 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 }
 
 func generateThumbnailForImage(imagePath string) error {
-	modifiedPath := strings.Replace(imagePath, "source", "thumbnail", -1)
+	modifiedPath := strings.Replace(imagePath, "photos", "thumbnail", -1)
 	sourceFile, err := os.Open(imagePath)
 	if err != nil {
 		return fmt.Errorf("failed to open source image: %w", err)
@@ -102,7 +102,7 @@ func generateThumbnailForImage(imagePath string) error {
 }
 
 func generateThumbnailForVideo(videoPath string) error {
-	modifiedPath := strings.Replace(videoPath, "source", "thumbnail", -1)
+	modifiedPath := strings.Replace(videoPath, "photos", "thumbnail", -1)
 	thumbnailPath := modifiedPath + ".jpg"
 	if _, err := os.Stat(filepath.Dir(thumbnailPath)); os.IsNotExist(err) {
 		os.MkdirAll(filepath.Dir(thumbnailPath), os.ModePerm)
@@ -192,14 +192,14 @@ func (server *Server) getThumbnail(ctx *gin.Context) {
 
 	var firstFile string
 	if info.IsDir() {
-		firstFile, err = getFirstFileInDir(strings.Replace(filePath, "source", "thumbnail", -1))
+		firstFile, err = getFirstFileInDir(strings.Replace(filePath, "photos", "thumbnail", -1))
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 			return
 		}
 	} else {
 		folderPath := filepath.Dir(filePath)
-		firstFile, err = getFirstFileInDir(strings.Replace(folderPath, "source", "thumbnail", -1))
+		firstFile, err = getFirstFileInDir(strings.Replace(folderPath, "photos", "thumbnail", -1))
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 			return
