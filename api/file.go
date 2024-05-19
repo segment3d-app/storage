@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"archive/zip"
 
 	"github.com/gin-gonic/gin"
 )
@@ -148,19 +150,75 @@ func (server *Server) getFile(ctx *gin.Context) {
 
 	filePath := filepath.Join(RootStorage, filepath.Clean("/"+capturedPath))
 
-	if info, err := os.Stat(filePath); err != nil {
+	info, err := os.Stat(filePath)
+	if err != nil {
 		if os.IsNotExist(err) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
-	} else if info.IsDir() {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+	}
+
+	if info.IsDir() {
+		zipData, err := zipDirectory(filePath)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			return
+		}
+
+		ctx.Header("Content-Disposition", "attachment; filename="+info.Name()+".zip")
+		ctx.Data(http.StatusOK, "application/zip", zipData)
 		return
 	}
 
 	ctx.File(filePath)
+}
+
+func zipDirectory(srcDir string) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	zipWriter := zip.NewWriter(buf)
+
+	err := filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			_, err := zipWriter.Create(relPath + "/")
+			return err
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		w, err := zipWriter.Create(relPath)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(w, file)
+		return err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = zipWriter.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }
 
 type getThumbnailResponse struct {
