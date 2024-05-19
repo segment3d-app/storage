@@ -36,7 +36,7 @@ func (server *Server) setupRouter() {
 
 	// Configure CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://34.142.178.123", "http://34.70.49.185"}, 
+		AllowOrigins:     []string{"http://localhost:3000", "http://34.142.178.123", "http://35.240.228.173"}, 
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
