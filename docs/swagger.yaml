@@ -28,6 +28,10 @@ paths:
         name: path
         required: true
         type: string
+      - description: isReturnLink
+        in: query
+        name: isLink
+        type: string
       produces:
       - application/octet-stream
       responses:

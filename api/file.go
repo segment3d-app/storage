@@ -1,6 +1,7 @@
 package api
 
 import (
+	"archive/zip"
 	"bytes"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"archive/zip"
 
 	"github.com/gin-gonic/gin"
 )
@@ -137,15 +137,30 @@ func isImage(filename string) bool {
 	return false
 }
 
+type getFileQuery struct {
+	IsLink string `form:"isLink"`
+}
+
+type getFileResponse struct {
+	Files []string `json:"files"`
+}
+
 // @Summary Get file
 // @Description Retrieve file data from specified path within the server's storage directory.
 // @Tags file
 // @Accept json
 // @Produce octet-stream
 // @Param path path string true "Path including any folders and subfolders to the file"
+// @Param isLink query string false "isReturnLink"
 // @Success 200 {file} file "File retrieved successfully"
 // @Router /files/{path} [get]
 func (server *Server) getFile(ctx *gin.Context) {
+	var query getFileQuery
+	if err := ctx.ShouldBindQuery(&query); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
 	capturedPath := ctx.Param("path")
 
 	filePath := filepath.Join(RootStorage, filepath.Clean("/"+capturedPath))
@@ -161,15 +176,36 @@ func (server *Server) getFile(ctx *gin.Context) {
 	}
 
 	if info.IsDir() {
-		zipData, err := zipDirectory(filePath)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if query.IsLink == "true" {
+			fmt.Println("masuk sini")
+			files, err := os.ReadDir(filePath)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+
+			// Collect filenames
+			var filenames []string
+			for _, file := range files {
+				if !file.IsDir() {
+					filenames = append(filenames, fmt.Sprintf("/files%s/%s", capturedPath, file.Name()))
+				}
+			}
+
+			// Return filenames as JSON response
+			ctx.JSON(http.StatusOK, getFileResponse{Files: filenames})
+			return
+		} else {
+			zipData, err := zipDirectory(filePath)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+
+			ctx.Header("Content-Disposition", "attachment; filename="+info.Name()+".zip")
+			ctx.Data(http.StatusOK, "application/zip", zipData)
 			return
 		}
-
-		ctx.Header("Content-Disposition", "attachment; filename="+info.Name()+".zip")
-		ctx.Data(http.StatusOK, "application/zip", zipData)
-		return
 	}
 
 	ctx.File(filePath)

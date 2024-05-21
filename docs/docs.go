@@ -35,6 +35,12 @@ const docTemplate = `{
                         "name": "path",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "isReturnLink",
+                        "name": "isLink",
+                        "in": "query"
                     }
                 ],
                 "responses": {
