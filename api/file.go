@@ -177,7 +177,6 @@ func (server *Server) getFile(ctx *gin.Context) {
 
 	if info.IsDir() {
 		if query.IsLink == "true" {
-			fmt.Println("masuk sini")
 			files, err := os.ReadDir(filePath)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
