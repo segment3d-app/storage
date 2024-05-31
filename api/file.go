@@ -138,7 +138,7 @@ func isImage(filename string) bool {
 }
 
 type getFileQuery struct {
-	IsLink string `form:"isLink"`
+	IsDownload string `form:"isDownload"`
 }
 
 type getFileResponse struct {
@@ -151,7 +151,7 @@ type getFileResponse struct {
 // @Accept json
 // @Produce octet-stream
 // @Param path path string true "Path including any folders and subfolders to the file"
-// @Param isLink query string false "isReturnLink"
+// @Param isDownload query string false "isDownloadFile"
 // @Success 200 {file} file "File retrieved successfully"
 // @Router /files/{path} [get]
 func (server *Server) getFile(ctx *gin.Context) {
@@ -176,7 +176,17 @@ func (server *Server) getFile(ctx *gin.Context) {
 	}
 
 	if info.IsDir() {
-		if query.IsLink == "true" {
+		if query.IsDownload == "true" {
+			zipData, err := zipDirectory(filePath)
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+				return
+			}
+
+			ctx.Header("Content-Disposition", "attachment; filename="+info.Name()+".zip")
+			ctx.Data(http.StatusOK, "application/zip", zipData)
+			return
+		} else {
 			files, err := os.ReadDir(filePath)
 			if err != nil {
 				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -194,20 +204,18 @@ func (server *Server) getFile(ctx *gin.Context) {
 			// Return filenames as JSON response
 			ctx.JSON(http.StatusOK, getFileResponse{Files: filenames})
 			return
-		} else {
-			zipData, err := zipDirectory(filePath)
-			if err != nil {
-				ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-				return
-			}
-
-			ctx.Header("Content-Disposition", "attachment; filename="+info.Name()+".zip")
-			ctx.Data(http.StatusOK, "application/zip", zipData)
-			return
 		}
 	}
 
-	ctx.File(filePath)
+	if query.IsDownload == "true" {
+		ctx.Header("Content-Disposition", "attachment; filename="+info.Name())
+		ctx.Header("Content-Type", "application/octet-stream")
+		ctx.File(filePath)
+		return
+	} else {
+		ctx.File(filePath)
+	}
+
 }
 
 func zipDirectory(srcDir string) ([]byte, error) {

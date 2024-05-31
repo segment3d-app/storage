@@ -32,6 +32,10 @@ paths:
         in: query
         name: isLink
         type: string
+      - description: isDownloadFile
+        in: query
+        name: isDownload
+        type: string
       produces:
       - application/octet-stream
       responses:
