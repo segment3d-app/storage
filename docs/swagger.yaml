@@ -28,10 +28,6 @@ paths:
         name: path
         required: true
         type: string
-      - description: isReturnLink
-        in: query
-        name: isLink
-        type: string
       - description: isDownloadFile
         in: query
         name: isDownload

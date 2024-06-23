@@ -38,12 +38,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "isReturnLink",
-                        "name": "isLink",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
                         "description": "isDownloadFile",
                         "name": "isDownload",
                         "in": "query"

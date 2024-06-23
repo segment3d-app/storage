@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -35,7 +36,12 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 	ctx.Request.Body = http.MaxBytesReader(ctx.Writer, ctx.Request.Body, 1000<<20) // Limit the request body to 1GB
 
 	folder := ctx.PostForm("folder")
-	form, _ := ctx.MultipartForm()
+	form, err := ctx.MultipartForm()
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("error parsing form data: %v", err)))
+		return
+	}
+	
 	files := form.File["file"]
 
 	if len(files) == 0 {
@@ -46,30 +52,56 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 	var uploadedFiles []string
 	isThumbnailGenerate := false
 
-	for _, file := range files {
+	log.Printf("len file %d", len(files))
+
+	for i, file := range files {
+		log.Printf("Processing file %d: %s", i, file.Filename)
+
 		filePath := filepath.Join(RootStorage, filepath.Clean(folder), filepath.Base(file.Filename))
 
 		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			log.Printf("Error creating directory for file %d (%s): %v", i, file.Filename, err)
+			ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("error creating directory: %v", err)))
 			return
 		}
 
 		if err := ctx.SaveUploadedFile(file, filePath); err != nil {
-			ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+			log.Printf("Error saving file %d (%s): %v", i, file.Filename, err)
+			ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("error saving file: %v", err)))
 			return
 		}
 
-		uploadedFilePath := fmt.Sprintf("/files/%s",
-			filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))
+		// Verify that the file was saved correctly and is not zero bytes
+		fileInfo, err := os.Stat(filePath)
+		if err != nil {
+			log.Printf("Error stating file %d (%s): %v", i, file.Filename, err)
+			ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("error stating file: %v", err)))
+			return
+		}
+		if fileInfo.Size() == 0 {
+			log.Printf("File %d (%s) is zero bytes after saving", i, file.Filename)
+			ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("file %d (%s) is zero bytes after saving", i, file.Filename)))
+			return
+		}
+
+		uploadedFilePath := fmt.Sprintf("/files/%s", filepath.Join(filepath.Clean(folder), filepath.Base(file.Filename)))
 		uploadedFiles = append(uploadedFiles, uploadedFilePath)
 
-		// generate
+		// generate thumbnail
 		if !isThumbnailGenerate {
 			if isVideo(file.Filename) {
-				generateThumbnailForVideo(filePath)
+				if err := generateThumbnailForVideo(filePath); err != nil {
+					log.Printf("Error generating thumbnail for video %d (%s): %v", i, file.Filename, err)
+					ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("error generating thumbnail for video: %v", err)))
+					return
+				}
 				isThumbnailGenerate = true
 			} else if isImage(file.Filename) {
-				generateThumbnailForImage(filePath)
+				if err := generateThumbnailForImage(filePath); err != nil {
+					log.Printf("Error generating thumbnail for image %d (%s): %v", i, file.Filename, err)
+					ctx.JSON(http.StatusInternalServerError, errorResponse(fmt.Errorf("error generating thumbnail for image: %v", err)))
+					return
+				}
 				isThumbnailGenerate = true
 			}
 		}
@@ -78,7 +110,12 @@ func (server *Server) uploadFile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, uploadFileResponse{Message: fmt.Sprintf("%d files uploaded successfully", len(files)), Url: uploadedFiles})
 }
 
+
 func generateThumbnailForImage(imagePath string) error {
+	if !strings.Contains(imagePath, "photos") {
+		return nil
+	}
+
 	modifiedPath := strings.Replace(imagePath, "photos", "thumbnail", -1)
 	sourceFile, err := os.Open(imagePath)
 	if err != nil {
@@ -103,7 +140,12 @@ func generateThumbnailForImage(imagePath string) error {
 	return nil
 }
 
+
 func generateThumbnailForVideo(videoPath string) error {
+	if !strings.Contains(videoPath, "photos") {
+		return nil
+	}
+
 	modifiedPath := strings.Replace(videoPath, "photos", "thumbnail", -1)
 	thumbnailPath := modifiedPath + ".jpg"
 	if _, err := os.Stat(filepath.Dir(thumbnailPath)); os.IsNotExist(err) {
