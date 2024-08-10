@@ -1,0 +1,15 @@
+services:
+  storage:
+    container_name: "storage"
+    build: ./
+    restart: unless-stopped
+    volumes:
+      - storage_data:/app/files
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+
+volumes:
+  storage_data:
+    name: "storage_data"

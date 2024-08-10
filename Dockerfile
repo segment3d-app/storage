@@ -14,7 +14,8 @@ RUN apk --no-cache add ca-certificates ffmpeg curl
 WORKDIR /app
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/app.env .
+COPY --from=builder /app/.env .
+COPY --from=builder /app/Makefile .
 RUN mkdir -p /app/files
 
 CMD ["./main"]
