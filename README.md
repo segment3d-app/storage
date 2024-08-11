@@ -22,7 +22,7 @@ This project is a part of the storage service for the Segment3D App. It is built
 Ensure you have the following tools installed on your machine:
 
 - [Go v1.21.6](https://go.dev/dl/)
-- [Docker](https://hub.docker.com/)
+- [Docker](https://hub.docker.com/) and [Docker Compose](https://docs.docker.com/compose/)
 - [Air](https://github.com/cosmtrek/air) (for live reloading during development)
 
 ### Installation
